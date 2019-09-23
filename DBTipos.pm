@@ -3,6 +3,7 @@ use constant ORA_DRIVER => "Oracle";
 use constant PG_DRIVER => "Pg";
 use DBD::Oracle qw(:ora_types);
 use constant ORACLE_BLOB => ORA_BLOB;
+use constant PG_BYTEA => DBD::Pg::PG_BYTEA;
 
 sub ora2pg {
   {
@@ -58,7 +59,7 @@ sub pg2ora{
     "bigint"                =>    "NUMBER(19)",
     "real"                  =>    "REAL", 
     "smallint"              =>    "SMALLINT",
-    "boolean"               =>    "BOOLEAN",
+    "boolean"               =>    "NUMBER(1)",
     "interval"              =>    "INTERVAL",
     "xml"                   =>    "XMLTYPE",
     "timestamp with time zone"      => "TIMESTAMP WITH TIME ZONE",
@@ -67,11 +68,33 @@ sub pg2ora{
   }->{shift()};
 };
 
+sub def_value {
+  my $defval = shift;
+  my $type = shift;
+  if (lc($type) eq "boolean") {
+      if ((lc($defval) eq "true") || ($defval == 1)) {
+        return 1;
+      }
+      elsif ((lc($defval) eq "false") || ($defval == 0)) {
+        return 0;
+      }
+      else {
+        die("Tipo boolean com valor default invalido!");
+      }
+  }
+  elsif (lc($type) eq "character varying") {
+    $defval =~ s/('[^']*')::.*/$1/;
+    return $defval;
+  }
+};
+
 sub identidade {
   return shift();
 };
 
 # def_name(nome_coluna, Driver banco)
+# Utiliza a definicao padrao (default name) para nomenclatura de 
+# tabelas e colunas dos bancos de dados.
 sub def_name {
   my $col = lc(shift);
   my $driver = shift;
@@ -90,7 +113,6 @@ sub def_name {
     return $col;
   }
 };
-
 
 sub tipoAtributo {
   {
@@ -142,6 +164,13 @@ use constant LONGS => {
 use constant ROWID => {
   "Oracle" => "ROWID",
   "Pg"  => "oid"
+};
+
+use constant MAP_TIPO => {
+  "BLOB"  => { ora_type => ORACLE_BLOB },
+  "CLOB"  => { ora_type => SQLT_CHR },
+  "LONG RAW" => { ora_type=>SQLT_BIN },
+  "bytea" => { pg_type => PG_BYTEA }
 };
 
 # Adiciona a clausula LIMIT, de acordo com os parametros obrigatorios

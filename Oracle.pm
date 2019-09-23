@@ -33,7 +33,6 @@ sub dataType {
   }->{shift()};
 };
 
-
 sub conexaoOracle {
   my $parametros  = shift;
   my $base  = $parametros->{'base'};
@@ -42,6 +41,11 @@ sub conexaoOracle {
   my $host  = $parametros->{'host'};
   my $port  = defined($parametros->{'porta'}) ? $parametros->{'porta'} : 1521;
   my $dbh_oracle = undef;
+
+  # Define o cliente Oracle como sendo UTF-8
+  #$ENV{'NLS_LANG'}  = 'AMERICAN_AMERICA.AL32UTF8';
+  $ENV{'NLS_LANG'}  = 'BRAZILIAN PORTUGUESE_BRAZIL.AL32UTF8';
+  #$ENV{'NLS_NCHAR'} = 'AL32UTF8';
 
   # Conexoes feitas sem o tnsnames.ora
   if ((defined($host)) && (defined($base))) {
@@ -56,16 +60,17 @@ sub conexaoOracle {
 
   $dbh_oracle->{AutoCommit}    = 0;
   $dbh_oracle->{RaiseError}    = 1;
-  $dbh_oracle->{PrintError}    = 0;
+  $dbh_oracle->{PrintError}    = 1;
   $dbh_oracle->{ora_check_sql} = 0;
   #$dbh_oracle->{RowCacheSize}  = 16;
   $dbh_oracle->do("alter session set NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'");
   $dbh_oracle->do("alter session set NLS_TIMESTAMP_FORMAT='YYYY-MM-DD HH24:MI:SS.FF6'");
   $dbh_oracle->do("alter session set NLS_NUMERIC_CHARACTERS = '. '");
-  #$ENV{'NLS_LANG'}  = 'AMERICAN_AMERICA.AL32UTF8';
-  ##$ENV{'NLS_NCHAR'} = 'AL32UTF8';
-  #
+  $parametros->{client_encoding} = undef;
+  $parametros->{server_encoding} = $dbh_oracle->ora_nls_parameters()->{NLS_CHARACTERSET};
+
   return $dbh_oracle;
 };
+
 
 1;

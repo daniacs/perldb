@@ -39,8 +39,18 @@ sub conexaoPG {
 
   $dbh_pg->{AutoCommit}    = 0;
   $dbh_pg->{RaiseError}    = 1;
-  $dbh_pg->{PrintError}    = 0;
+  $dbh_pg->{PrintError}    = 1;
   $dbh_pg->{pg_enable_utf8} = 0; # Se default ou 1, retorna ISO8859-1!
+  
+  # Encoding
+  my $sql = "SELECT name,setting 
+    FROM pg_catalog.pg_settings 
+    WHERE name IN ('server_encoding', 'client_encoding')";
+  my $temp_sth = $dbh_pg->prepare($sql);
+  my $res = $temp_sth->execute();
+  $res = $temp_sth->fetchall_hashref('name');
+  $parametros->{client_encoding} = $res->{client_encoding}->{setting};
+  $parametros->{server_encoding} = $res->{server_encoding}->{setting};
   return $dbh_pg;
 };
 
